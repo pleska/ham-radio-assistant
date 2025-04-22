@@ -1,0 +1,14 @@
+{
+    "inputs": [],
+    "servers": {
+        "HamRadioAssistant": {
+            "command": "docker",
+            "args": [
+                "run",
+                "-i",
+                "--rm",
+                "ham-radio-assistant"
+            ],
+        }
+    }
+}

@@ -1,0 +1,13 @@
+{
+  "server": {
+    "port": 8080
+  },
+  "models": [
+    {
+      "id": "ham-radio-assistant",
+      "name": "Ham Radio Assistant",
+      "description": "Model specialized in ham radio knowledge",
+      "enabled": true
+    }
+  ]
+}

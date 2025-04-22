@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Launch Ham Radio Assistant MCP Server",
+            "type": "go",
+            "request": "launch",
+            "mode": "auto",
+            "program": "${workspaceFolder}/main.go",
+            "args": [
+                "--config", "${workspaceFolder}/config.json"
+            ],
+            "env": {},
+            "cwd": "${workspaceFolder}"
+        }
+    ]
+}
