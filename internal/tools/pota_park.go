@@ -1,4 +1,4 @@
-// filepath: /workspaces/ham-radio-assistant/internal/tools/pota.go
+// Package tools provides tool implementations for the ham radio assistant
 package tools
 
 import (

@@ -36,3 +36,24 @@ type ParkReference struct {
 func (p *ParkReference) IsActive() bool {
 	return p.Active == 1
 }
+
+// POTASpot represents a spot of a POTA activation
+type POTASpot struct {
+	SpotID       int     `json:"spotId"`
+	Activator    string  `json:"activator"`
+	Frequency    string  `json:"frequency"`
+	Mode         string  `json:"mode"`
+	Reference    string  `json:"reference"`
+	SpotTime     string  `json:"spotTime"`
+	Spotter      string  `json:"spotter"`
+	Comments     string  `json:"comments"`
+	Source       string  `json:"source"`
+	Name         string  `json:"name"`
+	LocationDesc string  `json:"locationDesc"`
+	Grid4        string  `json:"grid4"`
+	Grid6        string  `json:"grid6"`
+	Latitude     float64 `json:"latitude"`
+	Longitude    float64 `json:"longitude"`
+	Count        int     `json:"count"`
+	Expire       int     `json:"expire"`
+}

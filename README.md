@@ -8,6 +8,7 @@ A Model Context Protocol (MCP) server providing useful tools for amateur radio o
 - **Antenna Bearing Calculations**: Calculate bearing between coordinates
 - **Callsign-to-Callsign Bearing**: Calculate bearing between two amateur radio operators based on their callsigns
 - **POTA Park Lookup**: Query information about Parks on the Air (POTA) locations
+- **POTA Spots Lookup**: View current POTA activations and filter by callsign or mode
 
 ## Model Context Protocol (MCP)
 
@@ -88,6 +89,27 @@ Retrieves detailed information about a Parks on the Air (POTA) location.
   - Park website URL (when available)
   - First activation information (callsign and date)
   - Link to POTA website for the park
+
+### 5. POTA Spots Lookup
+
+Displays current POTA activations with filtering options for callsign and operating mode.
+
+**Tool ID**: `pota-spots`
+
+**Inputs:**
+- `callsign` (string, optional): Filter spots by activator callsign
+- `mode` (string, optional): Filter spots by mode (e.g., SSB, CW, FT8)
+
+**Returns:**
+- A table of current POTA activations including:
+  - Activator callsign
+  - POTA reference
+  - Park name
+  - Frequency
+  - Operating mode
+  - Location
+  - Time (UTC), callsign and comment of spotter
+- Link to POTA website for each park
 
 ## Getting Started
 
