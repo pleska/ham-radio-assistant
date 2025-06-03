@@ -7,6 +7,7 @@ A Model Context Protocol (MCP) server providing useful tools for amateur radio o
 - **Callsign Lookup**: Query information about amateur radio callsigns
 - **Antenna Bearing Calculations**: Calculate bearing between coordinates
 - **Callsign-to-Callsign Bearing**: Calculate bearing between two amateur radio operators based on their callsigns
+- **POTA Park Lookup**: Query information about Parks on the Air (POTA) locations
 
 ## Model Context Protocol (MCP)
 
@@ -65,6 +66,23 @@ Calculates bearing and distance between two amateur radio operators based on the
 - Origin and destination locations with coordinates and grid squares
 - Distance in miles and kilometers
 - Bearing in degrees from North
+
+### 4. POTA Park Lookup
+
+Retrieves detailed information about a Parks on the Air (POTA) location.
+
+**Tool ID**: `pota-park-lookup`
+
+**Inputs:**
+- `reference` (string, required): POTA park reference (e.g., US-2312)
+
+**Returns:**
+  - Park name
+  - Location description
+  - Active status
+  - Coordinates (latitude/longitude)
+  - Grid square
+  - Link to POTA website for the park
 
 ## Getting Started
 
@@ -148,4 +166,5 @@ To use Ham Radio Assistant with Claude Desktop:
 ## Acknowledgments
 
 - [callook.info](https://callook.info/) for providing the callsign lookup API
+- [pota.app](https://pota.app) for providing the parks on the air (pota) parks list CSV. 
 - [Mark3Labs](https://github.com/mark3labs/mcp-go) for the MCP Go implementation

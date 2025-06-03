@@ -33,6 +33,7 @@ func (s *Server) RegisterTools() {
 	tools.RegisterCallsignLookupTool(s.mcpServer)
 	tools.RegisterAntennaBearingTool(s.mcpServer)
 	tools.RegisterCallsignBearingTool(s.mcpServer)
+	tools.RegisterPotaParkLookupTool(s.mcpServer)
 
 	// Additional tools can be registered here in the future
 }
