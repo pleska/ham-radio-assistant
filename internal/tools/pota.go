@@ -1,31 +1,22 @@
+// filepath: /workspaces/ham-radio-assistant/internal/tools/pota.go
 package tools
 
 import (
 	"context"
-	"encoding/csv"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"strings"
-	"sync"
-	"time"
 
-	"github.com/gocarina/gocsv"
 	"github.com/mark3labs/mcp-go/mcp"
 	"github.com/mark3labs/mcp-go/server"
 	"github.com/pleska/ham-radio-assistant/internal/models"
 )
 
 const (
-	potaDataURL      = "https://pota.app/all_parks_ext.csv"
-	cacheMaxAgeHours = 24
-)
-
-var (
-	parksCache      = make(map[string]models.ParkReference)
-	parksCacheMutex sync.RWMutex
-	lastCacheUpdate time.Time
+	potaAPIBaseURL = "https://api.pota.app/park/"
 )
 
 // RegisterPotaParkLookupTool registers the POTA park lookup tool with the MCP server
@@ -44,110 +35,86 @@ func RegisterPotaParkLookupTool(s *server.MCPServer) {
 	s.AddTool(tool, PotaParkLookup)
 }
 
-// PotaParkLookup is a tool handler for looking up POTA park details
+// PotaParkLookup is a tool handler for looking up POTA park details directly from the API
 func PotaParkLookup(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 	reference, ok := request.Params.Arguments["reference"].(string)
 	if !ok {
 		return nil, errors.New("reference must be a string")
 	}
 
-	// Ensure parks data is loaded and up to date
-	if err := loadParksData(); err != nil {
-		return nil, fmt.Errorf("error loading POTA data: %v", err)
-	}
-
-	// Look up park in cache
-	parksCacheMutex.RLock()
-	park, exists := parksCache[reference]
-	parksCacheMutex.RUnlock()
-
-	if !exists {
-		return mcp.NewToolResultText(fmt.Sprintf("Park with reference %s not found", reference)), nil
+	// Fetch park details using the REST API
+	park, err := fetchParkDetails(reference)
+	if err != nil {
+		return nil, fmt.Errorf("error fetching park details: %v", err)
 	}
 
 	// Format response
 	var response strings.Builder
 	response.WriteString(fmt.Sprintf("## POTA Park: %s\n\n", reference))
 	response.WriteString(fmt.Sprintf("**Name:** %s\n", park.Name))
-	response.WriteString(fmt.Sprintf("**Location:** %s\n", park.LocationDesc))
-	response.WriteString(fmt.Sprintf("**Status:** %s\n\n", formatStatus(park.Active)))
+	response.WriteString(fmt.Sprintf("**Location:** %s, %s\n", park.LocationDesc, park.LocationName))
+	response.WriteString(fmt.Sprintf("**Status:** %s\n", formatStatus(park.IsActive())))
+	response.WriteString(fmt.Sprintf("**Park Type:** %s\n\n", park.ParktypeDesc))
+
+	if park.ParkComments != "" {
+		response.WriteString(fmt.Sprintf("**Comments:** %s\n\n", park.ParkComments))
+	}
 
 	response.WriteString("### Geographic Information\n")
 	response.WriteString(fmt.Sprintf("**Coordinates:** %f, %f\n", park.Latitude, park.Longitude))
-	response.WriteString(fmt.Sprintf("**Grid Square:** %s\n\n", park.Grid))
+	response.WriteString(fmt.Sprintf("**Grid Square:** %s (%s)\n\n", park.Grid4, park.Grid6))
+
+	if park.AccessMethods != "" {
+		response.WriteString(fmt.Sprintf("**Access Methods:** %s\n", park.AccessMethods))
+	}
+
+	if park.ActivationMethods != "" {
+		response.WriteString(fmt.Sprintf("**Activation Methods:** %s\n\n", park.ActivationMethods))
+	}
+
+	if park.Website != "" {
+		response.WriteString(fmt.Sprintf("**Website:** [%s](%s)\n\n", park.Website, park.Website))
+	}
+
+	if park.FirstActivator != "" {
+		response.WriteString(fmt.Sprintf("**First Activated By:** %s on %s\n\n", park.FirstActivator, park.FirstActivationDate))
+	}
 
 	response.WriteString(fmt.Sprintf("[View on POTA website](https://pota.app/#/park/%s)", reference))
 
 	return mcp.NewToolResultText(response.String()), nil
 }
 
-// loadParksData ensures the POTA parks data is loaded and up to date
-func loadParksData() error {
-	parksCacheMutex.RLock()
-	cacheEmpty := len(parksCache) == 0
-	cacheExpired := time.Since(lastCacheUpdate) > cacheMaxAgeHours*time.Hour
-	parksCacheMutex.RUnlock()
-
-	if cacheEmpty || cacheExpired {
-		return refreshParksData()
-	}
-	return nil
-}
-
-// refreshParksData downloads the latest POTA parks data directly into memory
-func refreshParksData() error {
-	// Download fresh data
-	resp, err := http.Get(potaDataURL)
+// fetchParkDetails fetches park details from the POTA API
+func fetchParkDetails(reference string) (*models.ParkReference, error) {
+	// Fetch from API
+	apiURL := fmt.Sprintf("%s%s", potaAPIBaseURL, reference)
+	resp, err := http.Get(apiURL)
 	if err != nil {
-		return fmt.Errorf("error downloading POTA data: %v", err)
+		return nil, fmt.Errorf("error connecting to POTA API: %v", err)
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode == http.StatusNotFound {
+		return nil, fmt.Errorf("park with reference %s not found", reference)
+	}
+
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("received non-OK response status: %s", resp.Status)
+		return nil, fmt.Errorf("received non-OK response status: %s", resp.Status)
 	}
 
-	// Load directly from the response body
-	return loadParksFromReader(resp.Body)
-}
-
-// loadParksFromReader reads and parses POTA parks data from an io.Reader
-func loadParksFromReader(r io.Reader) error {
-	var parks []*models.ParkReference
-
-	// Use gocsv to unmarshal the CSV data directly into structs
-	if err := gocsv.Unmarshal(r, &parks); err != nil {
-		return fmt.Errorf("error parsing CSV data: %v", err)
+	// Read and parse the JSON response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading response body: %v", err)
 	}
 
-	// Create a new map to store the parks
-	newParksCache := make(map[string]models.ParkReference)
-
-	// Add valid parks to the cache
-	for _, park := range parks {
-		if park == nil || park.Reference == "" || park.Name == "" {
-			// Skip invalid records
-			continue
-		}
-		newParksCache[park.Reference] = *park
+	var parkData models.ParkReference
+	if err := json.Unmarshal(body, &parkData); err != nil {
+		return nil, fmt.Errorf("error parsing JSON data: %v", err)
 	}
 
-	// Update cache with acquired data
-	parksCacheMutex.Lock()
-	parksCache = newParksCache
-	lastCacheUpdate = time.Now()
-	parksCacheMutex.Unlock()
-
-	return nil
-}
-
-// customCSVUnmarshaler configures gocsv to use our custom unmarshaling logic
-func init() {
-	gocsv.SetCSVReader(func(in io.Reader) gocsv.CSVReader {
-		reader := csv.NewReader(in)
-		reader.FieldsPerRecord = -1 // Allow variable number of fields
-		return reader
-	})
+	return &parkData, nil
 }
 
 // formatStatus returns a human-readable status string

@@ -77,11 +77,16 @@ Retrieves detailed information about a Parks on the Air (POTA) location.
 - `reference` (string, required): POTA park reference (e.g., US-2312)
 
 **Returns:**
-  - Park name
-  - Location description
-  - Active status
-  - Coordinates (latitude/longitude)
-  - Grid square
+  - Park name and reference
+  - Park type and status (active/inactive)
+  - Location information (state/country)
+  - Geographic details:
+    - Coordinates (latitude/longitude)
+    - Grid square (4-character and 6-character)
+  - Access and activation methods
+  - Special comments or restrictions
+  - Park website URL (when available)
+  - First activation information (callsign and date)
   - Link to POTA website for the park
 
 ## Getting Started

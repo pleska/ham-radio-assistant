@@ -1,81 +1,38 @@
 package models
 
-import (
-	"strconv"
-	"strings"
-)
-
 // ParkReference represents a POTA (Parks on the Air) park reference.
 type ParkReference struct {
-	Reference    string  `json:"reference" csv:"reference"`
-	Name         string  `json:"name" csv:"name"`
-	Active       bool    `json:"active" csv:"active"`
-	EntityID     int     `json:"entityId" csv:"entityId"`
-	LocationDesc string  `json:"locationDesc" csv:"locationDesc"` // e.g., "US-ME"
-	Latitude     float64 `json:"latitude" csv:"latitude"`
-	Longitude    float64 `json:"longitude" csv:"longitude"`
-	Grid         string  `json:"grid" csv:"grid"` // Maidenhead grid square
+	ParkID              int     `json:"parkId"`
+	Reference           string  `json:"reference"`
+	Name                string  `json:"name"`
+	Latitude            float64 `json:"latitude"`
+	Longitude           float64 `json:"longitude"`
+	Grid4               string  `json:"grid4"`
+	Grid6               string  `json:"grid6"`
+	ParktypeID          int     `json:"parktypeId"`
+	Active              int     `json:"active"`
+	ParkComments        string  `json:"parkComments"`
+	Accessibility       *string `json:"accessibility"`
+	Sensitivity         *string `json:"sensitivity"`
+	AccessMethods       string  `json:"accessMethods"`
+	ActivationMethods   string  `json:"activationMethods"`
+	Agencies            *string `json:"agencies"`
+	AgencyURLs          *string `json:"agencyURLs"`
+	ParkURLs            *string `json:"parkURLs"`
+	Website             string  `json:"website"`
+	CreatedByAdmin      string  `json:"createdByAdmin"`
+	ParktypeDesc        string  `json:"parktypeDesc"`
+	LocationDesc        string  `json:"locationDesc"`
+	LocationName        string  `json:"locationName"`
+	EntityID            int     `json:"entityId"`
+	EntityName          string  `json:"entityName"`
+	ReferencePrefix     string  `json:"referencePrefix"`
+	EntityDeleted       int     `json:"entityDeleted"`
+	FirstActivator      string  `json:"firstActivator"`
+	FirstActivationDate string  `json:"firstActivationDate"`
 }
 
-// UnmarshalCSV is a custom unmarshaler for the ParkReference struct
-// It handles specific field parsing
-func (p *ParkReference) UnmarshalCSV(field []string, header []string) error {
-	for i, h := range header {
-		if i >= len(field) {
-			continue
-		}
-
-		switch h {
-		case "reference":
-			p.Reference = field[i]
-		case "name":
-			p.Name = field[i]
-		case "active":
-			active, err := ParseBool(field[i])
-			if err == nil {
-				p.Active = active
-			} else {
-				p.Active = true // Default to active if parsing fails
-			}
-		case "entityId":
-			if id, err := strconv.Atoi(field[i]); err == nil {
-				p.EntityID = id
-			}
-		case "locationDesc":
-			p.LocationDesc = field[i]
-		case "latitude":
-			if lat, err := strconv.ParseFloat(field[i], 64); err == nil {
-				p.Latitude = lat
-			}
-		case "longitude":
-			if lon, err := strconv.ParseFloat(field[i], 64); err == nil {
-				p.Longitude = lon
-			}
-		case "grid":
-			p.Grid = field[i]
-		}
-	}
-	return nil
-}
-
-// ParseBool parses a string representation of a boolean from CSV
-// It handles different formats like "1", "true", "yes", etc.
-func ParseBool(value string) (bool, error) {
-	value = strings.TrimSpace(strings.ToLower(value))
-	if value == "" {
-		return false, nil
-	}
-
-	// Check for common true representations
-	if value == "1" || value == "true" || value == "yes" || value == "y" {
-		return true, nil
-	}
-
-	// Parse as integer (0 = false, non-zero = true)
-	if i, err := strconv.ParseInt(value, 10, 64); err == nil {
-		return i != 0, nil
-	}
-
-	// Parse as normal bool
-	return strconv.ParseBool(value)
+// IsActive returns whether the park is active or not
+func (p *ParkReference) IsActive() bool {
+	return p.Active == 1
 }
